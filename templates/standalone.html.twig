@@ -36,7 +36,7 @@
                         {% endblock %}
                         {% block main %}{% endblock %}
                         {% if debug is defined %}
-                            {{ dump(debug) }}
+                            <pre class="debug-dump">{% include 'utils/format_value.html.twig' with { value: debug } only %}</pre>
                         {% endif %}
                         {% block helper %}{% endblock %}
                     </main>

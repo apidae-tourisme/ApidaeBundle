@@ -8,12 +8,12 @@
                     {% if v is iterable %}
                         {% include 'utils/var.html.twig' with {  var : v } %}
                     {% else %}
-                        {{ dump(v) }}
+                        {% include 'utils/format_value.html.twig' with { value: v } only %}
                     {% endif %}
                 </td>
             </tr>
         {% endfor %}
     </table>
 {% elseif var is not null %}
-    {{ dump(var) }}
+    {% include 'utils/format_value.html.twig' with { value: var } only %}
 {% endif %}

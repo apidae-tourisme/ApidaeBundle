@@ -63,7 +63,7 @@
                         {% block main %}{% endblock %}
                         {% block helper %}{% endblock %}
                         {% if debug is defined %}
-                            {{ dump(debug) }}
+                            <pre class="debug-dump">{% include 'utils/format_value.html.twig' with { value: debug } only %}</pre>
                         {% endif %}
                         {% if gql is defined %}
                             <pre style="font-size:.6em;max-height:80px;overflow:auto;"><code>{{ gql }}</code></pre>
