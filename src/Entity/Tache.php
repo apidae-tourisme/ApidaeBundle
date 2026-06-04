@@ -58,8 +58,8 @@ class Tache
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     private ?string $signature = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?Tache $tacheSuivante = null;
+    #[ORM\Column(name: 'tache_suivante', type: 'string', length: 255, nullable: true)]
+    private ?string $tacheSuivante = null;
 
     private LoggerInterface $logger ;
 
@@ -223,12 +223,12 @@ class Tache
         return $this;
     }
 
-    public function getTacheSuivante(): ?Tache
+    public function getTacheSuivante(): ?string
     {
         return $this->tacheSuivante;
     }
 
-    public function setTacheSuivante(?Tache $tacheSuivante): self
+    public function setTacheSuivante(?string $tacheSuivante): self
     {
         $this->tacheSuivante = $tacheSuivante;
 

@@ -45,7 +45,7 @@ class TacheRepository extends ServiceEntityRepository
     {
         $ret = $this->createQueryBuilder('t')
             ->andWhere('t.status = :status')
-            ->setParameter('status', TachesStatus::TO_RUN)
+            ->setParameter('status', TachesStatus::TO_RUN->value)
             ->orderBy('t.creationdate', 'ASC')
             ->setMaxResults(1)
             ->getQuery()
@@ -62,7 +62,7 @@ class TacheRepository extends ServiceEntityRepository
     {
         $ret = $this->createQueryBuilder('t')
             ->andWhere('t.status = :status')
-            ->setParameter('status', $status)
+            ->setParameter('status', $status->value)
             ->orderBy('t.creationdate', 'ASC')
             ->getQuery()
             ->getResult();
