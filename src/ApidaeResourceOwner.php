@@ -2,6 +2,7 @@
 
 namespace ApidaeTourisme\ApidaeBundle;
 
+use HWI\Bundle\OAuthBundle\OAuth\Response\UserResponseInterface;
 use Symfony\Component\OptionsResolver\Options;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 use HWI\Bundle\OAuthBundle\Security\OAuthErrorHandler;
@@ -20,7 +21,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    public function getUserInformation(array $accessToken, array $extraParameters = [])
+    public function getUserInformation(array $accessToken, array $extraParameters = []): UserResponseInterface
     {
         if ($this->options['use_bearer_authorization']) {
             $content = $this->httpRequest(
@@ -52,7 +53,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    public function getAuthorizationUrl($redirectUri, array $extraParameters = [])
+    public function getAuthorizationUrl($redirectUri, array $extraParameters = []): string
     {
         if ($this->options['csrf']) {
             $this->handleCsrfToken();
@@ -72,7 +73,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    public function getAccessToken(HttpRequest $request, $redirectUri, array $extraParameters = [])
+    public function getAccessToken(HttpRequest $request, $redirectUri, array $extraParameters = []): array
     {
         //dump(['method' => __METHOD__,'request' => $request, 'redirectUri' => $redirectUri, 'extraParameters' => $extraParameters]) ;
 
@@ -115,7 +116,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected function doGetUserInformationRequest($url, array $parameters = [])
+    protected function doGetUserInformationRequest($url, array $parameters = []): ResponseInterface
     {
         return $this->httpRequest($url, http_build_query($parameters, '', '&'));
     }
@@ -178,7 +179,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
     /**
      * {@inheritdoc}
      */
-    protected function httpRequest($url, $content = null, array $headers = [], $method = null)
+    protected function httpRequest($url, $content = null, array $headers = [], $method = null): ResponseInterface
     {
         $headers += ['Content-Type' => 'application/x-www-form-urlencoded'];
 

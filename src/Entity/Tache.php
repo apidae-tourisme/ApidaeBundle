@@ -3,94 +3,65 @@
 namespace ApidaeTourisme\ApidaeBundle\Entity;
 
 use ApidaeTourisme\ApidaeBundle\Config\TachesStatus;
+use ApidaeTourisme\ApidaeBundle\Repository\TacheRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Psr\Log\LoggerInterface;
 
-/**
- * @ORM\Entity(repositoryClass=TacheRepository::class)
- */
+#[ORM\Entity(repositoryClass: TacheRepository::class)]
 class Tache
 {
-    /**
-     * @ORM\Id
-     * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
-     */
-    private $id;
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'SEQUENCE')]
+    #[ORM\SequenceGenerator(sequenceName: 'tache_id_seq', allocationSize: 1)]
+    #[ORM\Column(type: 'integer')]
+    private ?int $id = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $userEmail = null;
+
+    #[ORM\Column(type: 'string', length: 255)]
+    private ?string $method = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $fichier = null;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $parametres = [];
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $parametresCaches = [];
 
     /**
-     * @ORM\Column(type="string", length=255, nullable=true)
+     * , columnDefinition="enum('TO_RUN', 'RUNNING', 'COMPLETED', 'FAILED', 'INTERRUPTED', CANCELLED')"
      */
-    private $userEmail;
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $status = null;
 
-    /**
-     * @ORM\Column(type="string", length=255)
-     */
-    private $method;
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $result = [];
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $fichier;
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $progress = [];
 
-    /**
-     * @ORM\Column(type="json", nullable=true)
-     */
-    private $parametres = [];
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $startdate = null;
 
-    /**
-     * @ORM\Column(type="json", nullable=true)
-     */
-    private $parametresCaches = [];
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    private ?\DateTimeInterface $enddate = null;
 
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     * , columnDefinition="enum('TO_RUN', 'RUNNING', 'COMPLETED', 'FAILED', 'INTERRUPTED', CANCELLED)"
-     */
-    private $status;
+    #[ORM\Column(type: 'datetime')]
+    private ?\DateTimeInterface $creationdate = null;
 
-    /**
-     * @ORM\Column(type="json", nullable=true)
-     */
-    private $result = [];
+    #[ORM\Column(type: 'integer', nullable: true)]
+    private ?int $pid = null;
 
-    /**
-     * @ORM\Column(type="json", nullable=true)
-     */
-    private $progress = [];
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    private ?string $signature = null;
 
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    private $startdate;
-
-    /**
-     * @ORM\Column(type="datetime", nullable=true)
-     */
-    private $enddate;
-
-    /**
-     * @ORM\Column(type="datetime")
-     */
-    private $creationdate;
-
-    /**
-     * @ORM\Column(type="integer", nullable=true)
-     */
-    private $pid;
-
-    /**
-     * @ORM\Column(type="string", length=255, nullable=true)
-     */
-    private $signature;
-
-    /**
-     * @ORM\Column(nullable=true)
-     */
+    #[ORM\Column(nullable: true)]
     private ?Tache $tacheSuivante = null;
 
     private LoggerInterface $logger ;
-
 
     public function getId(): ?int
     {
