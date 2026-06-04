@@ -27,7 +27,6 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "doctrine/annotations": "^2.0",
         "hwi/oauth-bundle": "^2.0@beta",
         "pierre-granger/apidae-membres": "*"
     },
