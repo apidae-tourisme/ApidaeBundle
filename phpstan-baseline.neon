@@ -163,36 +163,6 @@ parameters:
 			path: src/ApidaeUserProvider.php
 
 		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:isProcessRunning\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Command/TacheCommand.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:run\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Command/TacheCommand.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:save\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Command/TacheCommand.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:save\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Command/TachesManagerCommand.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:startByProcess\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Command/TachesManagerCommand.php
-
-		-
 			message: '#^Method ApidaeTourisme\\ApidaeBundle\\Controller\\SecurityController\:\:connectCheck\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -248,24 +218,6 @@ parameters:
 
 		-
 			message: '#^Parameter \#1 \$id of method ApidaeTourisme\\ApidaeBundle\\Repository\\TacheRepository\:\:getTacheById\(\) expects int, string given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/TacheAjaxController.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:delete\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/TacheAjaxController.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:restart\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/TacheAjaxController.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:stop\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache\|null given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Controller/TacheAjaxController.php
@@ -328,18 +280,6 @@ parameters:
 			message: '#^Parameter \#1 \$id of method ApidaeTourisme\\ApidaeBundle\\Repository\\TacheRepository\:\:getTacheById\(\) expects int, string given\.$#'
 			identifier: argument.type
 			count: 3
-			path: src/Controller/TacheController.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:save\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Controller/TacheController.php
-
-		-
-			message: '#^Parameter \#1 \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:stop\(\) expects ApidaeTourisme\\ApidaeBundle\\Services\\Tache, ApidaeTourisme\\ApidaeBundle\\Entity\\Tache given\.$#'
-			identifier: argument.type
-			count: 1
 			path: src/Controller/TacheController.php
 
 		-
@@ -541,78 +481,6 @@ parameters:
 			path: src/Repository/TacheRepository.php
 
 		-
-			message: '#^Call to method getId\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 10
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method getMethod\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 8
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method getStartDate\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method getStatus\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 5
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setCreationdate\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setFichier\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setMethod\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setParametres\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setParametresCaches\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setResult\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setStatus\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 3
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Call to method setUserEmail\(\) on an unknown class ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 2
-			path: src/Services/TachesServices.php
-
-		-
 			message: '#^Method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:getDossierTaches\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -631,67 +499,7 @@ parameters:
 			path: src/Services/TachesServices.php
 
 		-
-			message: '#^Offset 1 on array\{list\<string\>, list\<decimal\-int\-string\>\} in isset\(\) always exists and is not nullable\.$#'
-			identifier: isset.offset
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
 			message: '#^PHPDoc tag @var with type ApidaeTourisme\\ApidaeBundle\\Config\\TachesCode is not subtype of native type ApidaeTourisme\\ApidaeBundle\\Config\\TachesCode\:\:FAILURE\.$#'
 			identifier: varTag.nativeType
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:add\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:delete\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:isProcessRunning\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:monitorTask\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:restart\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:run\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:save\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:startByProcess\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Services/TachesServices.php
-
-		-
-			message: '#^Parameter \$tache of method ApidaeTourisme\\ApidaeBundle\\Services\\TachesServices\:\:stop\(\) has invalid type ApidaeTourisme\\ApidaeBundle\\Services\\Tache\.$#'
-			identifier: class.notFound
 			count: 1
 			path: src/Services/TachesServices.php

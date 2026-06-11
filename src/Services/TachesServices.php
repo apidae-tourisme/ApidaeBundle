@@ -11,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Filesystem\Filesystem;
 use ApidaeTourisme\ApidaeBundle\ApidaeUser;
+use ApidaeTourisme\ApidaeBundle\Entity\Tache;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\HttpKernel\KernelInterface;
 use ApidaeTourisme\ApidaeBundle\Command\TacheCommand;
@@ -148,19 +149,21 @@ class TachesServices
     }
 
     /**
-     * Lance le gestionnaire de tâches en sous-processus (depuis le worker scheduler).
+     * Lance le gestionnaire de tâches en sous-processus détaché (depuis le worker scheduler).
+     * Utilise nohup + shell background : un Process Symfony non conservé tuerait l'enfant à la destruction.
      */
-    public function startManagerInBackground(): Process
+    public function startManagerInBackground(): void
     {
-        $process = $this->buildConsoleProcess(TachesManagerCommand::getDefaultName());
-        $process->start();
+        $commandLine = $this->buildConsoleProcess(TachesManagerCommand::getDefaultName())->getCommandLine();
+        $wrapper = Process::fromShellCommandline(
+            'nohup ' . $commandLine . ' > /dev/null 2>&1 &',
+            $this->kernel->getProjectDir(),
+        );
+        $wrapper->run();
 
         $this->tachesLogger->debug('Gestionnaire de tâches lancé en sous-processus', [
-            'pid' => $process->getPid(),
             'command' => TachesManagerCommand::getDefaultName(),
         ]);
-
-        return $process;
     }
 
     /**
@@ -193,8 +196,6 @@ class TachesServices
          * @warning : pas sûr que ce soit facile, il faut déjà que l'utilisateur ayant lancé le process soit le même que celui qui lance le stop
          *  et il faut que le processus tourne toujours, sauf qu'il a pu lancer des sous-process et ne plus tourner lui même alors que la tâche n'est pas terminée
          */
-        $response = [];
-
         $killable_status = [
             TachesStatus::RUNNING->value
         ];
@@ -207,21 +208,15 @@ class TachesServices
             return ['error' => 'La tâche ' . $tache->getId() . ' n\'est pas en état [' . implode(',', $killable_status) . '] (' . $tache->getStatus() . ')'];
         }
 
-        $realPid = false ;
         try {
-            $process = Process::fromShellCommandline('pgrep -f \'[b]in/console '.TacheCommand::getDefaultName().' ' . $tache->getId() . '\'');
-            $process->run();
-            $output = $process->getOutput();
-            preg_match_all('#([0-9]+)#m', $output, $reg) ;
+            $pids = $this->getTacheProcessPids($tache);
+            if ($pids === []) {
+                return ['error' => 'Impossible de trouver le pid de la tâche '.$tache->getId()] ;
+            }
+            $realPid = $pids[array_key_last($pids)];
         } catch (Exception $e) {
             return ['error' => 'Impossible de récupérer le pid...'.$e->getMessage()];
         }
-
-        if (! isset($reg[1]) || sizeof($reg[1]) == 0) {
-            return ['error' => 'Impossible de trouver le pid de la tâche '.$tache->getId()] ;
-        }
-
-        $realPid = array_pop($reg[1]) ;
 
         try {
             $process = new Process(['kill', '-9', $realPid]);
@@ -349,14 +344,44 @@ class TachesServices
 
     /**
      * Détermine si le process apidae:tache:run de la tâche tourne sur ce pod.
+     * Exclut le processus courant pour ne pas confondre avec apidae:tache:run en cours de démarrage.
      */
     public function isProcessRunning(Tache $tache): bool
     {
-        $process = Process::fromShellCommandline('pgrep -f \'[b]in/console '.TacheCommand::getDefaultName().' ' . $tache->getId() . '\'');
-        $process->run();
-        $output = $process->getOutput();
+        return $this->getTacheProcessPids($tache, excludeCurrentProcess: true) !== [];
+    }
 
-        return trim($output) !== '';
+    /**
+     * @return list<int>
+     */
+    private function getTacheProcessPids(Tache $tache, bool $excludeCurrentProcess = false): array
+    {
+        $process = Process::fromShellCommandline('pgrep -f ' . escapeshellarg($this->getTacheProcessPgrepPattern($tache)));
+        $process->run();
+        $output = trim($process->getOutput());
+        if ($output === '') {
+            return [];
+        }
+
+        $excludePid = $excludeCurrentProcess ? getmypid() : null;
+        $pids = [];
+        foreach (preg_split('/\s+/', $output) ?: [] as $pid) {
+            $pid = (int) $pid;
+            if ($pid <= 0 || ($excludePid !== false && $pid === $excludePid)) {
+                continue;
+            }
+            $pids[] = $pid;
+        }
+
+        return $pids;
+    }
+
+    /**
+     * Motif pgrep pour le sous-processus apidae:tache:run (options Symfony entre bin/console et la commande).
+     */
+    private function getTacheProcessPgrepPattern(Tache $tache): string
+    {
+        return '[b]in/console.*' . preg_quote(TacheCommand::getDefaultName(), '/') . ' ' . (int) $tache->getId() . '$';
     }
 
     /**
