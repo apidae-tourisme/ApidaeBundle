@@ -7,6 +7,7 @@ services:
             $APIDAEBUNDLE_TACHES_LOOP: "%env(APIDAEBUNDLE_TACHES_LOOP)%"
             $APIDAEBUNDLE_TACHES_SLEEP: "%env(APIDAEBUNDLE_TACHES_SLEEP)%"
             $APIDAEBUNDLE_TACHES_MAX: "%env(APIDAEBUNDLE_TACHES_MAX)%"
+            $APIDAEBUNDLE_TACHES_MONITOR_GRACE: "%env(int:APIDAEBUNDLE_TACHES_MONITOR_GRACE)%"
 
     apidaebundle:
         namespace: ApidaeTourisme\ApidaeBundle\

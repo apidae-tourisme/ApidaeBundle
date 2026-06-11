@@ -10,11 +10,11 @@ use Symfony\Component\Process\Process;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Filesystem\Filesystem;
-use ApidaeTourisme\ApidaeBundle\Entity\Tache;
+use ApidaeTourisme\ApidaeBundle\ApidaeUser;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\HttpKernel\KernelInterface;
 use ApidaeTourisme\ApidaeBundle\Command\TacheCommand;
-use ApidaeTourisme\ApidaeBundle\Command\TachesCommand;
+use ApidaeTourisme\ApidaeBundle\Command\TachesManagerCommand;
 use ApidaeTourisme\ApidaeBundle\Config\TachesCode;
 use ApidaeTourisme\ApidaeBundle\Config\TachesStatus;
 use Symfony\Component\String\Slugger\SluggerInterface;
@@ -44,7 +44,8 @@ class TachesServices
         protected KernelInterface $kernel,
         protected ParameterBagInterface $params,
         protected Filesystem $filesystem,
-        protected SluggerInterface $slugger
+        protected SluggerInterface $slugger,
+        protected int $APIDAEBUNDLE_TACHES_MONITOR_GRACE,
     ) {
         $this->dossierTaches = $this->kernel->getProjectDir() . $this->params->get('apidaebundle.task_folder') ;
         $this->container = $kernel->getContainer() ;
@@ -58,13 +59,17 @@ class TachesServices
     /**
      * Ajoute une tâche TO_RUN en bdd
      */
-    public function add(Tache $tache, ?array $params = null): int
+    /**
+     * @param array<string, mixed>|null $params
+     */
+    public function add(Tache $tache, ?array $params = null): int|false
     {
         if (!isset($params['userEmail'])) {
-            /**
-             * @var ApidaeUser $user
-             */
+            /** @var ApidaeUser|null $user */
             $user = $this->security->getUser();
+            if ($user === null) {
+                throw new \RuntimeException('Utilisateur non authentifié');
+            }
             $tache->setUserEmail($user->getEmail());
         } else {
             $tache->setUserEmail($params['userEmail']);
@@ -143,40 +148,43 @@ class TachesServices
     }
 
     /**
-     * Lance une tâche en process (tâche de fond)
-     * Une fois lancée, la tâche renseigne le pid du process en base
+     * Lance le gestionnaire de tâches en sous-processus (depuis le worker scheduler).
      */
-    public function startByProcess(Tache $tache, bool $force = false): Process
+    public function startManagerInBackground(): Process
     {
-        if (!$force && $tache->getStatus() != TachesStatus::TO_RUN->value) {
-            throw new \Exception('La tâche ' . $tache->getId() . ' n\'est pas en état TO_RUN (' . $tache->getStatus() . ')');
-        }
-
-        $path = $this->kernel->getProjectDir() . '/bin/console';
-
-        $cl = [$path, TacheCommand::getDefaultName(), $tache->getId()];
-
-
-        /**
-         * @see https://symfony.com/doc/current/components/process.html
-        */
-        // $process = new Process($cl);
-        // $process->start();
-        /**
-         * @see https://stackoverflow.com/a/58765200/2846837
-         */
-        $process = Process::fromShellCommandline(implode(' ', $cl));
+        $process = $this->buildConsoleProcess(TachesManagerCommand::getDefaultName());
         $process->start();
 
-        $tache->setEndDate(null);
-        $tache->setProgress(null);
-        $this->save($tache);
+        $this->tachesLogger->debug('Gestionnaire de tâches lancé en sous-processus', [
+            'pid' => $process->getPid(),
+            'command' => TachesManagerCommand::getDefaultName(),
+        ]);
 
-        return $process ;
+        return $process;
     }
 
     /**
-     * Stoppe une tâche par un kill -9 en se basant sur son $tache->getPid()
+     * Lance une tâche en process (tâche de fond).
+     * La tâche doit avoir été réservée via claimNextTache() (statut RUNNING).
+     */
+    public function startByProcess(Tache $tache, bool $force = false): Process
+    {
+        if (!$force && $tache->getStatus() != TachesStatus::RUNNING->value) {
+            throw new \Exception('La tâche ' . $tache->getId() . ' n\'est pas en état RUNNING (' . $tache->getStatus() . ')');
+        }
+
+        $process = $this->buildConsoleProcess(
+            TacheCommand::getDefaultName(),
+            (string) $tache->getId(),
+        );
+        $process->start();
+
+        return $process;
+    }
+
+    /**
+     * Stoppe une tâche par un kill -9.
+     * Nécessite pgrep local : à appeler depuis le pod scheduler (pas le pod web).
      */
     public function stop(Tache $tache): array
     {
@@ -191,8 +199,8 @@ class TachesServices
             TachesStatus::RUNNING->value
         ];
 
-        if (!$this->running($tache)) {
-            return ['error' => 'La tâche ne semble pas être en cours d\'éxécution'];
+        if (!$this->isProcessRunning($tache)) {
+            return ['error' => 'La tâche ne semble pas être en cours d\'exécution (processus introuvable sur ce pod — arrêt depuis le worker scheduler uniquement)'];
         }
 
         if (! in_array($tache->getStatus(), $killable_status)) {
@@ -236,7 +244,7 @@ class TachesServices
         $this->tachesLogger->info(__METHOD__.'('.$tache->getId().')') ;
 
         /**
-         * @var int $ret
+         * @var TachesCode $ret
          */
         $ret = TachesCode::FAILURE ;
 
@@ -286,18 +294,23 @@ class TachesServices
                 }
             }
 
-            $ret = call_user_func($match[1].'::'.$match[2], $tache);
+            $ret = call_user_func([$match[1], $match[2]], $tache);
         } else {
             $this->tachesLogger->error('Impossible d\'exécuter la tâche : la commande '.$tache->getMethod().' est incohérence') ;
+        }
+
+        if (!$ret instanceof TachesCode) {
+            $this->tachesLogger->error('La méthode '.$tache->getMethod().' n\'a pas renvoyé un TachesCode') ;
+            return TachesCode::FAILURE ;
         }
 
         return $ret;
     }
 
     /**
-     * @todo
-     * Vérifie le statut des tâches en cours (status=RUNNING)
-     *
+     * Vérifie le statut des tâches RUNNING via pgrep (processus local).
+     * À appeler uniquement depuis le worker scheduler (même pod que apidae:tache:run).
+     * Ne pas appeler depuis le pod web : les PID ne sont pas partagés entre conteneurs/pods K8s.
      */
     public function monitorRunningTasks(): void
     {
@@ -312,25 +325,57 @@ class TachesServices
 
     public function monitorTask(Tache $tache): void
     {
-        if ($tache->getStatus() == TachesStatus::RUNNING->value) {
-            if (! $this->running($tache)) {
-                $tacheId = $tache->getId();
-                $this->tachesLogger->error('monitorTask('.$tacheId.') : task is not running => INTERRUPTED') ;
-                $tache->setStatus(TachesStatus::INTERRUPTED);
-                $this->save($tache);
+        if ($tache->getStatus() != TachesStatus::RUNNING->value) {
+            return;
+        }
+
+        if ($this->isProcessRunning($tache)) {
+            return;
+        }
+
+        $startDate = $tache->getStartDate();
+        if ($startDate !== null) {
+            $elapsed = time() - $startDate->getTimestamp();
+            if ($elapsed < $this->APIDAEBUNDLE_TACHES_MONITOR_GRACE) {
+                return;
             }
         }
+
+        $tacheId = $tache->getId();
+        $this->tachesLogger->error('monitorTask('.$tacheId.') : task is not running => INTERRUPTED') ;
+        $tache->setStatus(TachesStatus::INTERRUPTED);
+        $this->save($tache);
     }
 
     /**
-     * Détermine si une tâche est en cours d'exécution ou non
+     * Détermine si le process apidae:tache:run de la tâche tourne sur ce pod.
      */
-    private function running(Tache $tache): bool
+    public function isProcessRunning(Tache $tache): bool
     {
         $process = Process::fromShellCommandline('pgrep -f \'[b]in/console '.TacheCommand::getDefaultName().' ' . $tache->getId() . '\'');
         $process->run();
         $output = $process->getOutput();
-        return trim($output) != "" ;
+
+        return trim($output) !== '';
+    }
+
+    /**
+     * @param string ...$args Arguments console après bin/console (commande, args…)
+     */
+    private function buildConsoleProcess(string ...$args): Process
+    {
+        return new Process(
+            array_merge(
+                [
+                    \PHP_BINARY,
+                    $this->kernel->getProjectDir() . '/bin/console',
+                    '--env=' . $this->kernel->getEnvironment(),
+                    '--no-interaction',
+                ],
+                $args,
+            ),
+            $this->kernel->getProjectDir(),
+        );
     }
 
     public function delete(Tache $tache): bool

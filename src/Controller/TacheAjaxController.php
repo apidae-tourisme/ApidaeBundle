@@ -76,7 +76,7 @@ class TacheAjaxController extends AbstractController
      * @return void
      */
     #[Route('/statusBy', name: 'statusBy')]
-    public function statusBy(Request $request, TacheRepository $tacheRepository, TachesServices $tachesServices)
+    public function statusBy(Request $request, TacheRepository $tacheRepository)
     {
         $id = (is_int((int)$request->get('id'))) ? $request->get('id') : null ;
         $ids = (is_array($request->get('ids'))) ? $request->get('ids') : null ;
@@ -104,8 +104,7 @@ class TacheAjaxController extends AbstractController
         $user = $this->getUser();
         $response = ['taches' => []] ;
         foreach ($taches as $tache) {
-            $tachesServices->monitorTask($tache);
-            $tache = $tacheRepository->getTacheById($tache->getId()); // refresh
+            $tache = $tacheRepository->getTacheById($tache->getId()); // refresh depuis la BDD (progression en cours)
             $tmp = $tache->get() ;
             if ($tache->getUserEmail() != $user->getEmail()) {
                 unset($tmp['parametresCaches']);

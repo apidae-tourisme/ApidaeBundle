@@ -30,8 +30,6 @@ class TacheController extends AbstractController
     #[Route('/mestaches', name: 'mestaches')]
     public function mestaches()
     {
-        $this->tachesServices->monitorRunningTasks();
-
         /**
          * @var User $user
          */
@@ -49,8 +47,6 @@ class TacheController extends AbstractController
     #[Route('/manager', name: 'manager')]
     public function manager(Request $request)
     {
-        $this->tachesServices->monitorRunningTasks('manager');
-
         $taches = $this->tacheRepository->findAll();
 
         if ($request->get('action') == 'cancelRunningTasks') {
@@ -108,9 +104,6 @@ class TacheController extends AbstractController
                 return new Response('Tache introuvable');
             }
         }
-        $this->tachesServices->monitorTask($tache);
-        $tache = $this->tacheRepository->getTacheById($id);
-
         if ($_format == 'json') {
             $ret = $tache->get();
             /**
@@ -136,8 +129,6 @@ class TacheController extends AbstractController
         if (!$tache) {
             throw new \Exception('Tache introuvable');
         }
-        $this->tachesServices->monitorTask($tache);
-        $tache = $this->tacheRepository->getTacheById($id);
 
         return $this->render(
             'taches/result.html.twig',
@@ -156,8 +147,6 @@ class TacheController extends AbstractController
         if (!$tache) {
             throw new \Exception('Tache introuvable');
         }
-        $this->tachesServices->monitorTask($tache);
-        $tache = $this->tacheRepository->getTacheById($id);
 
         return $this->render(
             'taches/tache.html.twig',

@@ -1,0 +1,43 @@
+name: bundle
+
+services:
+
+  php:
+    container_name: bundle_php
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      target: base
+    restart: unless-stopped
+    working_dir: /var/www/html
+    ports:
+      - "${PORT:-80}:8080"
+    volumes:
+      - ../:/var/www/html
+      - ${LOCAL_DATA_PATH:-./data}/data:/var/www/data
+
+  postgres:
+    container_name: bundle_postgres
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
+      POSTGRES_USER: ${POSTGRES_USER:-me}
+      POSTGRES_DB: ${POSTGRES_DB:-bundle}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  scheduler:
+    container_name: bundle_scheduler
+    build:
+      context: ..
+      dockerfile: docker/php/Dockerfile
+      target: base
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: php bin/console messenger:consume scheduler_taches -vv --time-limit=3600 --memory-limit=128M
+    volumes:
+      - ../:/var/www/html
+      - ${LOCAL_DATA_PATH:-./data}/data:/var/www/data
+    depends_on:
+      - postgres

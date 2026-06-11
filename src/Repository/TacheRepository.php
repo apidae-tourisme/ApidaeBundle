@@ -53,6 +53,47 @@ class TacheRepository extends ServiceEntityRepository
         return $this->refreshRet($ret) ;
     }
 
+    /**
+     * Réserve atomiquement la prochaine tâche TO_RUN (TO_RUN → RUNNING).
+     * Utilise FOR UPDATE SKIP LOCKED pour les workers concurrents.
+     */
+    public function claimNextTache(): ?Tache
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = <<<'SQL'
+            WITH next AS (
+                SELECT id FROM tache
+                WHERE status = :to_run
+                ORDER BY creationdate ASC
+                LIMIT 1
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE tache t
+            SET status = :running,
+                startdate = NOW(),
+                enddate = NULL,
+                progress = NULL,
+                result = :empty_result,
+                pid = NULL
+            FROM next
+            WHERE t.id = next.id
+            RETURNING t.id
+            SQL;
+
+        $id = $conn->fetchOne($sql, [
+            'to_run' => TachesStatus::TO_RUN->value,
+            'running' => TachesStatus::RUNNING->value,
+            'empty_result' => '[]',
+        ]);
+
+        if ($id === false) {
+            return null;
+        }
+
+        return $this->getTacheById((int) $id);
+    }
+
     public function getTachesToRun(): array|null
     {
         return $this->getTachesByStatus(TachesStatus::TO_RUN);
@@ -69,7 +110,7 @@ class TacheRepository extends ServiceEntityRepository
         return $this->refreshRet($ret) ;
     }
 
-    public function getTachesNumberByStatus(string $status): int|null
+    public function getTachesNumberByStatus(string $status): int
     {
         $ret = $this->createQueryBuilder('t')
             ->select('count(t.id)')
@@ -77,7 +118,8 @@ class TacheRepository extends ServiceEntityRepository
             ->setParameter('status', $status)
             ->getQuery()
             ->getSingleScalarResult();
-            return $ret ;
+
+        return (int) $ret;
     }
 
     public function getTacheBySignature(string $signature): Tache|null

@@ -83,7 +83,11 @@ class ApidaeUser implements UserInterface
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->email;
+        if ($this->email === '') {
+            throw new \LogicException('Email utilisateur non défini.');
+        }
+
+        return $this->email;
     }
 
     /**
@@ -108,7 +112,7 @@ class ApidaeUser implements UserInterface
     /**
      * @see UserInterface
      */
-    public function eraseCredentials()
+    public function eraseCredentials(): void
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;

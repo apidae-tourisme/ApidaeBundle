@@ -8,6 +8,15 @@
             "ref": "64d8583af5ea57b7afa4aba4b159907f3a148b05"
         }
     },
+    "doctrine/deprecations": {
+        "version": "1.1",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "fdd756167454623e21f1d769c5b814b243782a67"
+        }
+    },
     "doctrine/doctrine-bundle": {
         "version": "2.8",
         "recipe": {
@@ -43,6 +52,9 @@
             "version": "0.6",
             "ref": "18ce21f16066cccfa0803c9e846a2e4f4bec92ab"
         }
+    },
+    "phpstan/phpstan": {
+        "version": "2.2.2"
     },
     "phpunit/phpunit": {
         "version": "10.0",
@@ -123,6 +135,18 @@
             "public/index.php",
             "src/Controller/.gitignore",
             "src/Kernel.php"
+        ]
+    },
+    "symfony/lock": {
+        "version": "6.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "5.2",
+            "ref": "8e937ff2b4735d110af1770f242c1107fdab4c8e"
+        },
+        "files": [
+            "config/packages/lock.yaml"
         ]
     },
     "symfony/mailer": {

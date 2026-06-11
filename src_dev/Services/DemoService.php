@@ -47,11 +47,12 @@ class DemoService
     */
     public function demo2(Tache $tache): TachesCode
     {
-        $steps = 10 ;
+        $steps = 20 ;
         $logger_context = ['id' => $tache->getId(), 'steps' => $steps] ;
         $logger_context['tachePid'] = $tache->getPid() ;
-        $step = 1 ;
+        $step = 0 ;
         do {
+            $step++ ;
             $logger_context['getmypid'] = getmypid() ;
             $logger_context['step'] = $step ;
             $this->tachesLogger->info('Début de l\'étape...', $logger_context) ;
@@ -59,7 +60,6 @@ class DemoService
             $this->tachesServices->save($tache) ;
             // Do whatever this task has to do
             sleep(2) ;
-            $step++ ;
 
             $this->tachesLogger->info('Fin de l\'étape...', $logger_context) ;
             $tache->log('info', 'Fin de l\'étape '.$step.'...');

@@ -11,13 +11,15 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use ApidaeTourisme\ApidaeBundle\Config\TachesStatus;
 use ApidaeTourisme\ApidaeBundle\Services\TachesServices;
 use ApidaeTourisme\ApidaeBundle\Repository\TacheRepository;
 
 /**
  * Cette commande permet de lancer les tâches en attente
  * Elle ne lancera les tâches qu'une par une, en prenant la plus ancienne au statut TO_RUN
- * En lançant cette commande par une tâche cron (toutes les minutes par exemple) on s'assure d'avoir un traitement régulier des tâches
+ * En lançant cette commande par une tâche cron (toutes les minutes par exemple) ou via le Symfony Scheduler
+ * (messenger:consume scheduler_taches) on s'assure d'avoir un traitement régulier des tâches
  * Elle effectue LOOP(10) boucles avec un interval minimal (sleep) de SLEEPTIME(6) secondes à chaque lancement, donc peut durer plus d'une minute.
  * Elle peut lancer des tâches TO_RUN même si d'autres sont déjà en cours : elle n'en lancera au maximum que MAX_TACHES en même temps.
  * Il peut donc y avoir un recouvrement entre les tâches cron si on les déclenche à 1 min d'intervalle :
@@ -34,9 +36,9 @@ class TachesManagerCommand extends Command
         protected Filesystem $filesystem,
         protected TacheRepository $tacheRepository,
         protected TachesServices $tachesServices,
-        protected $APIDAEBUNDLE_TACHES_SLEEP,
-        protected $APIDAEBUNDLE_TACHES_LOOP,
-        protected $APIDAEBUNDLE_TACHES_MAX
+        protected int $APIDAEBUNDLE_TACHES_SLEEP,
+        protected int $APIDAEBUNDLE_TACHES_LOOP,
+        protected int $APIDAEBUNDLE_TACHES_MAX
     ) {
         parent::__construct();
     }
@@ -70,7 +72,7 @@ class TachesManagerCommand extends Command
             if ($running >= $this->APIDAEBUNDLE_TACHES_MAX) {
                 $this->tachesLogger->debug($running . '/'.$this->APIDAEBUNDLE_TACHES_MAX.' tâches sont déjà en cours : aucune autre tâche ne sera lancée') ;
             } else {
-                $next = $this->tacheRepository->getTacheToRun();
+                $next = $this->tacheRepository->claimNextTache();
 
                 if ($next) {
                     $this->tachesLogger->info('Une tâche en attente va être exécutée', [
@@ -82,6 +84,8 @@ class TachesManagerCommand extends Command
                         $childs[] = $this->tachesServices->startByProcess($next) ;
                     } catch (Exception $e) {
                         $this->tachesLogger->error($e->getMessage()) ;
+                        $next->setStatus(TachesStatus::TO_RUN);
+                        $this->tachesServices->save($next);
                     }
                 } else {
                     $this->tachesLogger->debug('Aucune tâche en attente n\'a été trouvée') ;

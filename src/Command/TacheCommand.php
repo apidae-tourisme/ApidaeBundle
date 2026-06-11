@@ -6,15 +6,12 @@ use Exception;
 use Psr\Log\LoggerInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Filesystem\Filesystem;
-use ApidaeTourisme\ApidaeBundle\Entity\Tache;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use ApidaeTourisme\ApidaeBundle\Config\TachesCode;
 use Symfony\Component\Console\Input\InputInterface;
 use ApidaeTourisme\ApidaeBundle\Config\TachesStatus;
 use Symfony\Component\Console\Output\OutputInterface;
-use ApidaeTourisme\ApidaeBundle\Services\TacheService;
 use ApidaeTourisme\ApidaeBundle\Services\TachesServices;
 use ApidaeTourisme\ApidaeBundle\Repository\TacheRepository;
 
@@ -51,72 +48,67 @@ class TacheCommand extends Command
             return Command::FAILURE ;
         }
 
+        $status = $tache->getStatus();
+
+        if ($status === TachesStatus::RUNNING->value && $this->tachesServices->isProcessRunning($tache)) {
+            $this->tachesLogger->warning('Tâche '.$id.' déjà en cours d\'exécution sur ce pod', $logger_context) ;
+
+            return Command::FAILURE;
+        }
+
+        if ($status !== TachesStatus::TO_RUN->value && $status !== TachesStatus::RUNNING->value) {
+            $this->tachesLogger->warning('Tâche '.$id.' dans un statut non exécutable : '.$status, $logger_context) ;
+
+            return Command::FAILURE;
+        }
+
         $this->tachesLogger->info('Tâche '.$id.' trouvée : lancement de la tâche', $logger_context) ;
 
-        // On passe le statut à RUNNING pour que l'interface graphique l'affiche correctement
         $tache->setStatus(TachesStatus::RUNNING);
         $tache->setStartDate(new \DateTime());
         $tache->setResult([]);
         $tache->setEndDate(null);
         $tache->setProgress(null);
-        $tache->setPid(getmypid()) ;
+        $pid = getmypid();
+        if ($pid !== false) {
+            $tache->setPid($pid);
+        }
         $this->tachesServices->save($tache) ;
 
         $commandState = Command::FAILURE;
+        $terminalStatus = TachesStatus::FAILED;
 
         try {
             $retour = $this->tachesServices->run($tache);
-
-            if ($retour instanceof TachesCode) {
-                $commandState = $retour->value ;
-            } else {
-                $tache->setStatus(TachesStatus::INTERRUPTED) ;
-                $tache->log('warning', 'La tâche n\'a pas renvoyé un code erreur cohérent (not instanceof TachesCode)') ;
-                $this->tachesLogger->warning('La tâche n\'a pas renvoyé un code erreur cohérent (not instanceof TachesCode)') ;
-            }
+            $commandState = $retour->value;
+            $terminalStatus = $commandState === Command::SUCCESS
+                ? TachesStatus::COMPLETED
+                : TachesStatus::FAILED;
         } catch (Exception $e) {
-            /**
-             * La tâche a planté sans qu'on ait catché l'erreur : ça veut dire qu'on n'a pas encore logué l'erreur.
-             * On ne sait pas s'il y a déjà des logs dans $result, on va donc le récupérer.
-             * On ajoute ensuite l'erreur dans les logs ($result)
-             */
             $this->tachesLogger->error('Sortie de tâche sur une exception... '.$e->getMessage()) ;
             $tache->log('error', 'Sortie de tâche sur une exception... '.$e->getMessage()) ;
             $this->tachesLogger->debug($e->getTraceAsString()) ;
             $tache->log('debug', $e->getTraceAsString()) ;
-            $tache->setStatus(TachesStatus::INTERRUPTED) ;
+            $terminalStatus = TachesStatus::INTERRUPTED;
         }
 
-        // on le fait dans tous les cas... on sait jamais, un jour on mettra peut-être des logs d'erreur dans output_file alors s'il est présent, on le stocke !
-        /**
-         * @todo sur la console, $retour pouvait être un array.
-         * Ici pour simplifier, $retour est un Command::SUCCESS/FAILURE/INVALID.
-         * Il faudra voir comment gérer le cas où la tâche renvoie un fichier...
-         * L'action effectuée reçoit la tâche en paramètre (voir TachesServices::run),
-         * le setFichier peut se faire dedans.
-         */
-        // if (isset($retour['output_file'])) {
-        //     $tache->setFichier($retour['output_file']);
-        // }
-
-        // Une fois la tâche terminée, on change son status
-        if ($commandState === Command::SUCCESS) {
-            $tache->setStatus(TachesStatus::COMPLETED);
-
-            // S'il y a une tâche à enchaîner (cas type : extract>insert sur outil d'import), on passe la tâche suivante à TO_RUN
-            $next = $tache->getTacheSuivante() ;
-            if ( $next != null && $next->getStatus() == TachesStatus::WAITING ) {
-                $next->setStatus(TachesStatus::TO_RUN) ;
-                $this->tachesServices->save($next) ;
+        if ($terminalStatus === TachesStatus::COMPLETED) {
+            $nextId = $tache->getTacheSuivante();
+            if ($nextId !== null) {
+                $next = $this->tacheRepository->getTacheById((int) $nextId);
+                if ($next !== null && $next->getStatus() === TachesStatus::WAITING->value) {
+                    $next->setStatus(TachesStatus::TO_RUN);
+                    $this->tachesServices->save($next);
+                }
             }
-        } else {
-            $tache->setStatus(TachesStatus::FAILED);
         }
 
+        $tache->setStatus($terminalStatus);
         $tache->setEndDate(new \DateTime());
         $this->tachesServices->save($tache);
 
         $this->tachesLogger->info('STATUS:' . $tache->getStatus(), $logger_context);
+
         return $commandState;
     }
 }

@@ -1,0 +1,4 @@
+# À copier dans config/packages/lock.yaml de l'application hôte.
+# Prod K8s multi-replicas scheduler : LOCK_DSN=doctrine://default
+framework:
+    lock: '%env(LOCK_DSN)%'

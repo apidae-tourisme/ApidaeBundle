@@ -1,0 +1,21 @@
+# Modèle pour l'application hôte : copier vers phpstan.neon.dist et adapter les paths.
+#
+# Prérequis :
+#   composer require --dev phpstan/phpstan phpstan/phpstan-symfony phpstan/phpstan-doctrine
+#   php bin/console cache:warmup --env=dev
+#
+# Analyse du bundle seul (depuis la racine du repo bundle) :
+#   composer phpstan
+#
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 7
+    paths:
+        - src
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+    doctrine:
+        objectManagerLoader: tests/phpstan/object-manager.php
+    treatPhpDocTypesAsCertain: false
