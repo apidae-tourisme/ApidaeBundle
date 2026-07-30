@@ -389,7 +389,8 @@ class TachesServices
      */
     private function buildConsoleProcess(string ...$args): Process
     {
-        return new Process(
+        // Pas de timeout : le défaut Symfony (60s) tue les longues tâches au wait() du manager → INTERRUPTED.
+        $process = new Process(
             array_merge(
                 [
                     \PHP_BINARY,
@@ -401,6 +402,9 @@ class TachesServices
             ),
             $this->kernel->getProjectDir(),
         );
+        $process->setTimeout(null);
+
+        return $process;
     }
 
     public function delete(Tache $tache): bool
