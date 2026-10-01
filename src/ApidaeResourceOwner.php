@@ -86,7 +86,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
         ], $extraParameters);
 
         $response = $this->doGetTokenRequest($this->options['access_token_url'], $parameters);
-        $response = $this->getResponseContentFromXml($response) ;
+        $response = $this->getResponseContent($response) ;
 
         //dump(['method' => __METHOD__, 'response' => $response]) ;
 
@@ -106,7 +106,7 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
         ], $extraParameters);
 
         $response = $this->doGetTokenRequest($this->options['access_token_url'], $parameters);
-        $response = $this->getResponseContentFromXml($response);
+        $response = $this->getResponseContent($response);
 
         $this->validateResponseContent($response);
 
@@ -196,21 +196,33 @@ final class ApidaeResourceOwner extends GenericOAuth2ResourceOwner
     }
 
     /**
-     * @see https://stackoverflow.com/questions/4554233/how-check-if-a-string-is-a-valid-xml-with-out-displaying-a-warning-in-php
+     * Le SIT répondait en XML, et répond en JSON depuis la mise à jour de Spring Security.
+     * On accepte les deux formats.
+     *
+     * @return array<string, mixed>
      */
-    protected function getResponseContentFromXml(ResponseInterface $response)
+    protected function getResponseContent(ResponseInterface $response): array
     {
-        $rawResponse = $response->getContent(false) ;
-        libxml_use_internal_errors(true);
+        $rawResponse = $response->getContent(false);
 
-        $doc = simplexml_load_string($rawResponse);
-
-        if (!$doc) {
-            $errors = libxml_get_errors();
-            dd($errors);
-            libxml_clear_errors();
+        $json = json_decode($rawResponse, true);
+        if (is_array($json)) {
+            return $json;
         }
 
-        return (array)$doc;
+        $previous = libxml_use_internal_errors(true);
+        $doc = simplexml_load_string($rawResponse);
+        $errors = libxml_get_errors();
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if (false === $doc) {
+            throw new AuthenticationException(sprintf(
+                'Invalid response received from Authorization Server (neither JSON nor XML) : %s',
+                $errors ? trim($errors[0]->message) : substr($rawResponse, 0, 200)
+            ));
+        }
+
+        return (array) $doc;
     }
 }

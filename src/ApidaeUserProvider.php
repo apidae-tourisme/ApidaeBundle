@@ -31,6 +31,7 @@ final class ApidaeUserProvider implements UserProviderInterface, OAuthAwareUserP
 
         $localApidaeUser = new ApidaeUser() ;
         $localApidaeUser->setEmail($remoteApidaeUser['eMail']) ;
+        $localApidaeUser->setApidaeId((int) $remoteApidaeUser['id']) ;
         $localApidaeUser->setFirstname($remoteApidaeUser['prenom']) ;
         $localApidaeUser->setLastname($remoteApidaeUser['nom']) ;
         $localApidaeUser->setType($remoteApidaeUser['type']) ;
@@ -45,7 +46,10 @@ final class ApidaeUserProvider implements UserProviderInterface, OAuthAwareUserP
 
     public function loadUserByOAuthUserResponse(UserResponseInterface $response): UserInterface
     {
-        return $this->loadUserByIdentifier($response->getNickname());
+        $user = $this->loadUserByIdentifier($response->getNickname());
+        $user->setApidaeToken($response->getAccessToken());
+
+        return $user;
     }
 
     public function loadUserByUsername($username): UserInterface
@@ -55,7 +59,13 @@ final class ApidaeUserProvider implements UserProviderInterface, OAuthAwareUserP
 
     public function refreshUser(UserInterface $user): UserInterface
     {
-        return $this->loadUserByIdentifier($user->getUserIdentifier());
+        $refreshed = $this->loadUserByIdentifier($user->getUserIdentifier());
+        if ($user instanceof ApidaeUser) {
+            // Le token SSO n'est connu qu'au login : on le conserve d'un refresh à l'autre
+            $refreshed->setApidaeToken($user->getApidaeToken());
+        }
+
+        return $refreshed;
     }
 
     public function supportsClass($class): bool

@@ -7,6 +7,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 class ApidaeUser implements UserInterface
 {
     private string $email;
+    private ?int $apidaeId = null;
+    private ?string $apidaeToken = null;
     private string $gravatar ;
     private string $firstname ;
     private string $lastname ;
@@ -22,6 +24,36 @@ class ApidaeUser implements UserInterface
     public function setEmail(string $email): self
     {
         $this->email = $email;
+
+        return $this;
+    }
+
+    /**
+     * Identifiant de l'utilisateur sur Apidae (SIT)
+     */
+    public function getApidaeId(): ?int
+    {
+        return $this->apidaeId;
+    }
+
+    public function setApidaeId(int $apidaeId): self
+    {
+        $this->apidaeId = $apidaeId;
+
+        return $this;
+    }
+
+    /**
+     * Token SSO de l'utilisateur (disponible après un login OAuth, reporté lors des refresh de session)
+     */
+    public function getApidaeToken(): ?string
+    {
+        return $this->apidaeToken;
+    }
+
+    public function setApidaeToken(?string $apidaeToken): self
+    {
+        $this->apidaeToken = $apidaeToken;
 
         return $this;
     }
