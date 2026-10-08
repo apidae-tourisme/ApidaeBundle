@@ -1,3 +1,4 @@
+{% set var = castArray(var) %}
 {% if var is iterable %}
     <table class="table">
         {% for k, v in var %}
